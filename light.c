@@ -70,3 +70,13 @@ Color adjust_luminosity(Color color, int d_luminosity){
 }
 
 
+void play_mode(Ribbon ribbon){
+    //TODO
+}
+
+
+void stop_mode(Ribbon ribbon){
+    //TODO
+}
+
+

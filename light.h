@@ -48,8 +48,8 @@ void change_mode(Ribbon ribbon, uint8_t mode = RANDOM, Color fix_color = {0,0,0,
 
 
 /* Play the animation */
-void play_mode();
+void play_mode(Ribbon ribbon);
 
 
 /* Stop the animation */
-void stop_mode();
+void stop_mode(Ribbon ribbon);
