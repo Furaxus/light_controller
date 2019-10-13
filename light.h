@@ -2,9 +2,13 @@
  * Controller for light ribon
  */
 
-#include <type.h>
+#ifndef __LIGHT_H__
+#define __LIGHT_H__
 
-#define NB_LED 50
+#include <stdint.h>
+
+#define NB_LED                  50      // number of led in the ribbon
+#define RANDOM_ITERATION        10      // number of iteration of each selected random mode
 
 /* ========== RIBBON MODE ========== */
 #define RANDOM      0
@@ -13,12 +17,23 @@
 #define FADE        3       // smooth transition between one color
 #define SMOOTH      4       // smooth transition between all color
 
-typedef struct rgbl_t Color;
-typedef struct ribbon_t *Ribbon;
+typedef struct rgbl_t {
+    uint8_t _red;
+    uint8_t _green;
+    uint8_t _blue;
+    uint8_t _luminosity;
+} Color;
 
 
-/* Init the ribbon with default parameters */
-void set_ribbon(Ribbon ribbon);
+typedef struct ribbon_t {
+    uint8_t mode;
+    Color fix_color;
+    Color tab_led[NB_LED];
+} Ribbon;
+
+
+/* Return a ribbon with default parameters */
+Ribbon set_ribbon();
 
 
 /* Set the color for the Color type
@@ -30,26 +45,25 @@ Color set_color(uint8_t red, uint8_t green, uint8_t blue, uint8_t luminosity);
 /* Adjust the given color with the delta RGB value (positive or negative)
  * return the adjusted color
  */
-Color adjust_color(Color color, uint8_t d_red, uint8_t d_green, uint8_t d_blue);
+Color adjust_color(Color color, int d_red, int d_green, int d_blue);
 
 
 /* Adjust the given color's luminosity with the delta luminosity you give
  * return the adjusted color
  */
-Color adjust_luminosity(Color color, uint8_t d_luminosity);
+Color adjust_luminosity(Color color, int d_luminosity);
 
 
-/* Change the Ribbon animation mode 
- * Following modes need a Color in third argument
- *  FLASH
- *  FADE
- */
-void change_mode(Ribbon ribbon, uint8_t mode = RANDOM, Color fix_color = {0,0,0,0});
+/* Change the Ribbon animation mode */
+void change_mode(Ribbon *ribbon, uint8_t mode);
 
 
-/* Play the animation */
-void play_mode(Ribbon ribbon);
+/* Change the starting color of the animation */
+void change_color(Ribbon *ribbon, Color color);
 
 
-/* Stop the animation */
-void stop_mode(Ribbon ribbon);
+/* Play the animation once */
+void play_mode(Ribbon *ribbon);
+
+
+#endif

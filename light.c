@@ -1,19 +1,30 @@
 #include "light.h"
+#include <stdlib.h>
+#include <time.h>
 
 
-typedef struct rgbl_t {
-    uint8_t _red;
-    uint8_t _green;
-    uint8_t _blue;
-    uint8_t _luminosity;
-};
+
+//srand(time(NULL));
 
 
-typedef struct ribbon_t {
-    uint8_t mode;
-    rgbl_t fix_color;
-    rgbl_t tab_led[NB_LED];
-};
+Color set_color(uint8_t red, uint8_t green, uint8_t blue, uint8_t luminosity){
+    Color rgbl;
+    rgbl._red = red;
+    rgbl._green = green;
+    rgbl._blue = blue;
+    rgbl._luminosity = luminosity;
+
+    return rgbl;
+}
+
+#define RGBL(red, green, blue, luminosity) set_color(red, green, blue, luminosity)
+
+
+uint8_t select_random_mode(void){
+    uint8_t slct = rand()%4 +1;
+    return slct;
+}
+
 
 uint8_t adjust(uint8_t color, int delta){
     int tmp_color = color + delta;
@@ -26,31 +37,22 @@ uint8_t adjust(uint8_t color, int delta){
 }
 
 
-void set_all_led(Ribbon ribbon, uint8_t red, uint8_t green, uint8_t blue, uint8_t luminosity){
+void set_all_led(Ribbon *ribbon, Color color){
     for (uint8_t i = 0; i < NB_LED; i++){
-        ribbon->tab_led[i] = {red, green, blue, luminosity};
+        ribbon->tab_led[i] = RGBL(color._red, color._green, color._blue, color._luminosity);
     }
 }
 
 
-void set_ribbon(Ribbon ribbon){
-    ribbon->mode = RANDOM;
-    ribbon->fix_color._red = 255;
-    ribbon->fix_color._green = 255;
-    ribbon->fix_color._blue = 255;
-    ribbon->fix_color._luminosity = 255;
-    set_all_led(ribbon, 255, 255, 255, 255);
-}
-
-
-Color set_color(uint8_t red, uint8_t green, uint8_t blue, uint8_t luminosity){
-    Color rgbl;
-    rgbl._red = red;
-    rgbl._green = green;
-    rgbl._blue = blue;
-    rgbl._luminosity = luminosity;
-
-    return rgbl;
+Ribbon set_ribbon(){
+    Ribbon ribbon;
+    ribbon.mode = RANDOM;
+    ribbon.fix_color._red = 255;
+    ribbon.fix_color._green = 255;
+    ribbon.fix_color._luminosity = 255;
+    set_all_led(&ribbon, RGBL(255, 255, 255, 255));
+    
+    return ribbon;
 }
 
 
@@ -70,13 +72,38 @@ Color adjust_luminosity(Color color, int d_luminosity){
 }
 
 
-void play_mode(Ribbon ribbon){
+void play_mode(Ribbon *ribbon){
     //TODO
+    switch (ribbon->mode){
+        case RANDOM :
+            ribbon->mode = select_random_mode();
+            for (int i=0; i<RANDOM_ITERATION; i++){
+                play_mode(ribbon);
+            }
+            ribbon->mode = RANDOM;
+            break;
+        case FLASH :
+            set_all_led(ribbon, ribbon->fix_color);
+            break;
+        case STROBE :
+            break;
+        case FADE :
+            break;
+        case SMOOTH :
+            break;
+    }
+    //print light
 }
 
 
-void stop_mode(Ribbon ribbon){
-    //TODO
+void change_mode(Ribbon *ribbon, uint8_t mode){
+    if (0 <= mode && mode <= 4)
+        ribbon->mode = mode;
+    else
+        ribbon->mode = RANDOM;
 }
 
 
+void change_color(Ribbon *ribbon, Color color){
+    //TODO
+}

@@ -3,6 +3,8 @@
  */
 
 #include <pthread.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 
 
@@ -12,29 +14,31 @@
 #define IR_SENSOR           // pin of infrared sensor 
 
 
+Ribbon leds_ribbon;         // the led_ribbon
+
 
 void *ribbon_activity(void *arg){
     //TODO
     (void) arg;
+    return 0;
 }
 
 
 
 
-int main(void){
+int main(int argc, const char* argv[]){
     pthread_t light_activity;
-    Ribbon leds_ribbon;
     
-    set_ribbon(leds_ribbon);
+    leds_ribbon = set_ribbon();
     
     //start activity 
     if(pthread_create(&light_activity, NULL, ribbon_activity, NULL) == -1) {
-	perror("[ERREUR] controller.c : main -> pthread_create");
-	return EXIT_FAILURE;
+	fprintf(stderr, "[ERREUR] controller.c : main -> pthread_create");
+	return 1;
     }
     
     //wait for event
     //TODO
     
-    return EXIT_SUCCESS;
+    return 0;
 }
