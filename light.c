@@ -1,4 +1,5 @@
 #include "light.h"
+#include "ws2812b.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -6,27 +7,42 @@
 
 //srand(time(NULL));
 
+Color set_color(uint8_t red, uint8_t green, uint8_t blue);
+#define RGB(red, green, blue, luminosity) set_color(red, green, blue)
 
-Color set_color(uint8_t red, uint8_t green, uint8_t blue, uint8_t luminosity){
+
+/* Internal functions */
+void _play_mode(Ribbon *ribbon);
+uint8_t _select_random_mode(void);
+uint8_t _adjust(uint8_t color, int delta);
+void _set_all_led(Ribbon *ribbon, Color color);
+
+/* Definition mode function */
+void _flash_function(Ribbon *ribbon);
+void _strobe_function(Ribbon *ribbon);
+void _fade_function(Ribbon *ribbon);
+void _smooth_function(Ribbon *ribbon);
+
+
+
+
+Color set_color(uint8_t red, uint8_t green, uint8_t blue){
     Color rgbl;
     rgbl._red = red;
     rgbl._green = green;
     rgbl._blue = blue;
-    rgbl._luminosity = luminosity;
 
     return rgbl;
 }
 
-#define RGBL(red, green, blue, luminosity) set_color(red, green, blue, luminosity)
 
-
-uint8_t select_random_mode(void){
+uint8_t _select_random_mode(void){
     uint8_t slct = rand()%4 +1;
     return slct;
 }
 
 
-uint8_t adjust(uint8_t color, int delta){
+uint8_t _adjust(uint8_t color, int delta){
     int tmp_color = color + delta;
     if (tmp_color < 0)
         return 0;
@@ -37,73 +53,106 @@ uint8_t adjust(uint8_t color, int delta){
 }
 
 
-void set_all_led(Ribbon *ribbon, Color color){
+void _set_all_led(Ribbon *ribbon, Color color){
     for (uint8_t i = 0; i < NB_LED; i++){
-        ribbon->tab_led[i] = RGBL(color._red, color._green, color._blue, color._luminosity);
+        ribbon->tab_led[i] = RGB(color._red, color._green, color._blue);
     }
 }
 
 
-Ribbon set_ribbon(){
+void _print_ribbon(Ribbon *ribbon){
+    uint8_t i;
+    uint8_t pin;
+    
+    pin = ribbon->pin;
+    for (i=0; i<NB_LED; i++){
+        write_grb(ribbon->tab_led[i]._green, ribbon->tab_led[i]._red, ribbon->tab_led[i]._blue, pin);
+    }
+}
+
+
+Ribbon set_ribbon(uint8_t pin){
     Ribbon ribbon;
-    ribbon.mode = RANDOM;
+    ribbon.pin = pin;
     ribbon.fix_color._red = 255;
     ribbon.fix_color._green = 255;
-    ribbon.fix_color._luminosity = 255;
-    set_all_led(&ribbon, RGBL(255, 255, 255, 255));
+    _set_all_led(&ribbon, RGB(255, 255, 255, 255));
+    ribbon.mode = _flash_function;
     
-    return ribbon;
+    
+    //TODO launch thread
+    if (pthread_create(&ribbon.thd, NULL, _play_mode, ribbon) != 0){
+        
+    }
+    else
+        return ribbon;
 }
 
 
 Color adjust_color(Color color, int d_red, int d_green, int d_blue){
-    color._red = adjust(color._red, d_red);
-    color._green = adjust(color._green, d_green);
-    color._blue = adjust(color._blue, d_blue);
+    color._red = _adjust(color._red, d_red);
+    color._green = _adjust(color._green, d_green);
+    color._blue = _adjust(color._blue, d_blue);
 
     return color;
-}
-
-
-Color adjust_luminosity(Color color, int d_luminosity){
-    color._luminosity = adjust(color._luminosity, d_luminosity);
-
-    return color;
-}
-
-
-void play_mode(Ribbon *ribbon){
-    //TODO
-    switch (ribbon->mode){
-        case RANDOM :
-            ribbon->mode = select_random_mode();
-            for (int i=0; i<RANDOM_ITERATION; i++){
-                play_mode(ribbon);
-            }
-            ribbon->mode = RANDOM;
-            break;
-        case FLASH :
-            set_all_led(ribbon, ribbon->fix_color);
-            break;
-        case STROBE :
-            break;
-        case FADE :
-            break;
-        case SMOOTH :
-            break;
-    }
-    //print light
-}
-
-
-void change_mode(Ribbon *ribbon, uint8_t mode){
-    if (0 <= mode && mode <= 4)
-        ribbon->mode = mode;
-    else
-        ribbon->mode = RANDOM;
 }
 
 
 void change_color(Ribbon *ribbon, Color color){
     //TODO
 }
+
+
+/* **************************************************** */
+/* *************** ANIMATION MANAGEMENT *************** */
+void _play_mode(Ribbon *ribbon){
+    ribbon->mode(ribbon);
+}
+
+
+void change_mode(Ribbon *ribbon, uint8_t mode){
+    switch (mode){
+        case RANDOM :
+            change_mode(ribbon, _select_random_mode());
+            break;
+        case FLASH :
+            ribbon->mode = _flash_function;
+            break;
+        case STROBE :
+            ribbon->mode = _strobe_function;
+            break;
+        case FADE :
+            ribbon->mode = _fade_function;
+            break;
+        case SMOOTH :
+            ribbon->mode = _smooth_function;
+            break;
+    }
+}
+
+
+/* **************************************************** */
+/* ****************** MODE FUNCTIONS ****************** */
+
+void _flash_function(Ribbon *ribbon){
+    _set_all_led(ribbon, ribbon->fix_color);
+    //TODO
+}
+
+void _strobe_function(Ribbon *ribbon){
+    _set_all_led(ribbon, ribbon->fix_color);
+    _print_ribbon(ribbon);
+    
+    //TODO
+}
+
+void _fade_function(Ribbon *ribbon){
+    //TODO
+}
+
+void _smooth_function(Ribbon *ribbon){
+    //TODO
+}
+
+
+/* **************************************************** */
